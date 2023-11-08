@@ -220,6 +220,8 @@ class Configuration implements IConfiguration {
 
   useSystemClipboard = false;
 
+  killRingMax = 120;
+
   shell = '';
 
   useCtrlKeys = false;
