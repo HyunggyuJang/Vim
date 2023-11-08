@@ -1860,6 +1860,9 @@ class ActionDeleteVisualBlock extends BaseCommand {
     const text = lines.length === 1 ? lines[0] : lines.join('\n');
     vimState.currentRegisterMode = RegisterMode.BlockWise;
     Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
+
 
     const topLeft = visualBlockGetTopLeftPosition(
       vimState.cursorStopPosition,
@@ -1899,6 +1902,8 @@ class ActionShiftDVisualBlock extends BaseCommand {
 
     const text = lines.length === 1 ? lines[0] : lines.join('\n');
     Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     vimState.cursors = [new Cursor(topLeft, topLeft)];
     await vimState.setCurrentMode(Mode.Normal);
@@ -1963,6 +1968,8 @@ class ActionChangeInVisualBlockMode extends BaseCommand {
 
     const text = lines.length === 1 ? lines[0] : lines.join('\n');
     Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     await vimState.setCurrentMode(Mode.Insert);
     vimState.isFakeMultiCursor = true;
