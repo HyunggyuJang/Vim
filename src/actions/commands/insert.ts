@@ -5,6 +5,7 @@ import { lineCompletionProvider } from '../../completion/lineCompletionProvider'
 import { ErrorCode, VimError } from '../../error';
 import { RecordedState } from '../../state/recordedState';
 import { VimState } from '../../state/vimState';
+import { globalState } from '../../state/globalState';
 import { StatusBar } from '../../statusBar';
 import { isHighSurrogate, isLowSurrogate } from '../../util/util';
 import { PositionDiff } from './../../common/motion/position';
@@ -515,7 +516,7 @@ class AltYInInsertMode extends BaseCommand {
 
   public override async exec(position: Position, vimState: VimState): Promise<void> {
     const text = await vscode.window.showQuickPick([
-      ...new Set(vimState.historyTracker.killRing.reverse()),
+      ...new Set(globalState.killRing.reverse()),
     ], {
       placeHolder: "Choose which kill to yank"
     });
