@@ -237,8 +237,8 @@ export class FileCommand extends ExCommand {
       args.cmd?.type === 'line_number'
         ? args.cmd.line
         : args.cmd?.type === 'last_line'
-          ? vscode.window.activeTextEditor!.document.lineCount - 1
-          : undefined;
+        ? vscode.window.activeTextEditor!.document.lineCount - 1
+        : undefined;
     if (lineNumber !== undefined && lineNumber >= 0) {
       const pos = new vscode.Position(lineNumber, 0);
       editor.selection = new vscode.Selection(pos, pos);

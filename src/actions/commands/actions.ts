@@ -1871,7 +1871,6 @@ class ActionDeleteVisualBlock extends BaseCommand {
     // Put into kill ring
     vimState.historyTracker.yankToKillRing(text);
 
-
     const topLeft = visualBlockGetTopLeftPosition(
       vimState.cursorStopPosition,
       vimState.cursorStartPosition,

@@ -134,8 +134,8 @@ export class DeleteOperator extends BaseOperator {
       text = text.endsWith('\r\n')
         ? text.slice(0, -2)
         : text.endsWith('\n')
-          ? text.slice(0, -1)
-          : text;
+        ? text.slice(0, -1)
+        : text;
     }
     Register.put(vimState, text, this.multicursorIndex, true);
     // Put into kill ring
@@ -707,7 +707,7 @@ class YankVisualBlockMode extends BaseOperator {
 
     this.highlightYankedRanges(vimState, ranges);
 
-    const text = lines.join('\n')
+    const text = lines.join('\n');
     Register.put(vimState, text, this.multicursorIndex, true);
     // Put into kill ring
     vimState.historyTracker.yankToKillRing(text);
