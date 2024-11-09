@@ -30,14 +30,7 @@ function newTestGeneric<T extends ITestObject | ITestWithRemapsObject>(
     const prevConfig = { ...Globals.mockConfiguration };
     try {
       if (testObj.config) {
-        for (const key in testObj.config) {
-          if (testObj.config.hasOwnProperty(key)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const value = testObj.config[key];
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            Globals.mockConfiguration[key] = value;
-          }
-        }
+        Object.assign(Globals.mockConfiguration, testObj.config);
         await reloadConfiguration();
       }
       await innerTest(testObj);
@@ -149,7 +142,7 @@ class DocState {
 }
 
 /**
- * Tokenize a string like "abc<Esc>d<C-c>" into ["a", "b", "c", "<Esc>", "d", "<C-c>"]
+ * Tokenize a string like `"abc<Esc>d<C-c>"` into `["a", "b", "c", "<Esc>", "d", "<C-c>"]`
  */
 function tokenizeKeySequence(sequence: string): string[] {
   let isBracketedKey = false;
