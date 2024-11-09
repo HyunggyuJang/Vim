@@ -1,10 +1,10 @@
 {
-  "name": "vim",
-  "displayName": "Vim",
-  "description": "Vim emulation for Visual Studio Code",
+  "name": "vim-with-killring",
+  "displayName": "Vim with Kill Ring",
+  "description": "Vim emulation for Visual Studio Code, with killring support",
   "icon": "images/icon.png",
-  "version": "1.27.2",
-  "publisher": "vscodevim",
+  "version": "1.0.8",
+  "publisher": "HyunggyuJang",
   "galleryBanner": {
     "color": "#e3f4ff",
     "theme": "light"
@@ -17,11 +17,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/VSCodeVim/Vim.git"
+    "url": "https://github.com/HyunggyuJang/Vim.git"
   },
-  "homepage": "https://github.com/VSCodeVim/Vim",
+  "homepage": "https://github.com/HyunggyuJang/Vim",
   "bugs": {
-    "url": "https://github.com/VSCodeVim/Vim/issues"
+    "url": "https://github.com/HyunggyuJang/Vim/issues"
   },
   "engines": {
     "vscode": "^1.74.0"
@@ -420,6 +420,46 @@
         "when": "editorTextFocus && vim.active && vim.use<D-v> && vim.mode == 'CommandlineInProgress' && !inDebugRepl || editorTextFocus && vim.active && vim.use<D-v> && vim.mode == 'SearchInProgressMode' && !inDebugRepl"
       },
       {
+        "key": "alt+y",
+        "command": "extension.vim_alt+y",
+        "when": "editorTextFocus && vim.active && vim.use<A-y> && !inDebugRepl"
+      },
+      {
+        "key": "alt+w",
+        "command": "extension.vim_alt+w",
+        "when": "editorTextFocus && vim.active && vim.use<A-w> && !inDebugRepl"
+      },
+      {
+        "key": "alt+k",
+        "command": "extension.vim_alt+k",
+        "when": "editorTextFocus && vim.active && vim.use<A-k> && !inDebugRepl"
+      },
+      {
+        "key": "alt+r",
+        "command": "extension.vim_alt+r",
+        "when": "editorTextFocus && vim.active && vim.use<A-r> && !inDebugRepl"
+      },
+      {
+        "key": "alt+a",
+        "command": "extension.vim_alt+a",
+        "when": "editorTextFocus && vim.active && vim.use<A-a> && !inDebugRepl"
+      },
+      {
+        "key": "alt+e",
+        "command": "extension.vim_alt+e",
+        "when": "editorTextFocus && vim.active && vim.use<A-e> && !inDebugRepl"
+      },
+      {
+        "key": "alt+n",
+        "command": "extension.vim_alt+n",
+        "when": "editorTextFocus && vim.active && vim.use<A-n> && !inDebugRepl"
+      },
+      {
+        "key": "alt+p",
+        "command": "extension.vim_alt+p",
+        "when": "editorTextFocus && vim.active && vim.use<A-p> && !inDebugRepl"
+      },
+      {
         "key": "ctrl+alt+down",
         "linux": "shift+alt+down",
         "mac": "cmd+alt+down",
@@ -471,6 +511,11 @@
         "vim.useCtrlKeys": {
           "type": "boolean",
           "markdownDescription": "Enable some Vim Ctrl key commands that override otherwise common operations, like `Ctrl+C`.",
+          "default": true
+        },
+        "vim.useAltKeys": {
+          "type": "boolean",
+          "markdownDescription": "Enable some Vim Alt key commands that override otherwise common operations, like `Alt+Y`.",
           "default": true
         },
         "vim.leader": {
@@ -526,6 +571,11 @@
           "type": "boolean",
           "description": "Use system clipboard for unnamed register.",
           "default": false
+        },
+        "vim.killRingMax": {
+          "type": "number",
+          "description": "Maximum length of kill ring before oldest elements are thrown away.",
+          "default": 120
         },
         "vim.overrideCopy": {
           "type": "boolean",
@@ -1182,12 +1232,12 @@
     "prettier:check": "prettier --check .",
     "watch": "webpack -c webpack.dev.js --watch",
     "package": "yarn run vsce package --yarn --allow-star-activation",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "diff-match-patch": "1.0.5",
     "lodash": "^4.17.21",
-    "neovim": "4.10.1",
+    "neovim": "5.2.0",
     "os-browserify": "0.3.0",
     "parsimmon": "^1.18.0",
     "path-browserify": "1.0.1",
@@ -1197,44 +1247,44 @@
     "util": "0.12.5"
   },
   "devDependencies": {
-    "@types/diff": "5.0.9",
+    "@types/diff": "5.2.2",
     "@types/diff-match-patch": "1.0.36",
     "@types/glob": "8.1.0",
-    "@types/lodash": "4.14.202",
-    "@types/mocha": "10.0.6",
-    "@types/node": "18.19.3",
+    "@types/lodash": "4.17.7",
+    "@types/mocha": "10.0.7",
+    "@types/node": "20.16.5",
     "@types/parsimmon": "1.10.9",
-    "@types/sinon": "17.0.2",
+    "@types/sinon": "17.0.3",
     "@types/vscode": "1.74.0",
-    "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
-    "@vscode/test-electron": "2.3.8",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "2.4.1",
     "circular-dependency-plugin": "^5.2.2",
     "clean-webpack-plugin": "4.0.0",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-jsdoc": "^46.8.2",
+    "eslint-plugin-jsdoc": "^50.0.0",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "event-stream": "4.0.1",
     "fork-ts-checker-webpack-plugin": "9.0.2",
-    "gulp": "4.0.2",
+    "gulp": "5.0.0",
     "gulp-bump": "3.2.0",
-    "gulp-git": "2.10.1",
+    "gulp-git": "2.11.0",
     "gulp-tag-version": "1.3.1",
     "gulp-typescript": "5.0.1",
-    "husky": "^8.0.3",
+    "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
     "minimist": "1.2.8",
-    "mocha": "10.2.0",
+    "mocha": "10.7.3",
     "plugin-error": "2.0.1",
-    "prettier": "3.1.1",
-    "sinon": "17.0.1",
+    "prettier": "3.3.3",
+    "sinon": "18.0.0",
     "ts-loader": "9.5.1",
-    "typescript": "5.3.3",
+    "typescript": "5.5.4",
     "vsce": "2.15.0",
-    "webpack": "5.89.0",
+    "webpack": "5.94.0",
     "webpack-cli": "5.1.4",
-    "webpack-merge": "5.10.0",
+    "webpack-merge": "6.0.1",
     "webpack-stream": "7.0.0"
   },
   "lint-staged": {

@@ -9,7 +9,7 @@
  *
  * Undo/Redo will advance forward or backwards through Steps.
  */
-import DiffMatchPatch = require('diff-match-patch');
+import * as DiffMatchPatch from 'diff-match-patch';
 import * as vscode from 'vscode';
 
 import { VimState } from './../state/vimState';
@@ -22,6 +22,7 @@ import { Mode } from '../mode/mode';
 import { ErrorCode, VimError } from '../error';
 import { Logger } from '../util/logger';
 import { earlierOf } from '../common/motion/position';
+import { configuration } from '../configuration/configuration';
 
 const diffEngine = new DiffMatchPatch.diff_match_patch();
 diffEngine.Diff_Timeout = 1; // 1 second
@@ -523,23 +524,66 @@ export class HistoryTracker {
   }
 
   /**
+   * Yanks to kill ring
+   */
+  public yankToKillRing(text: string): void {
+    const size = globalState.killRing.push(text);
+    if (size > configuration.killRingMax) {
+      globalState.killRing.shift();
+    }
+  }
+
+  /**
    * Adds a mark.
    */
   public addMark(document: vscode.TextDocument, position: Position, markName: string): void {
-    // Sets previous context mark (adds current position to jump list).
-
     if (markName === "'" || markName === '`') {
-      return globalState.jumpTracker.recordJump(Jump.fromStateNow(this.vimState));
+      globalState.jumpTracker.recordJump(Jump.fromStateNow(this.vimState));
+    } else if (markName === '<') {
+      if (this.vimState.lastVisualSelection) {
+        this.vimState.lastVisualSelection.start = position;
+      } else {
+        this.vimState.lastVisualSelection = {
+          mode: Mode.Visual,
+          start: position,
+          end: position,
+        };
+      }
+      if (
+        this.vimState.lastVisualSelection.mode === Mode.Visual &&
+        this.vimState.lastVisualSelection.end.isBefore(this.vimState.lastVisualSelection.start)
+      ) {
+        // HACK: Visual mode representation is stupid
+        this.vimState.lastVisualSelection.end = this.vimState.lastVisualSelection.start;
+      }
+    } else if (markName === '>') {
+      if (this.vimState.lastVisualSelection) {
+        this.vimState.lastVisualSelection.end = position.getRight();
+      } else {
+        this.vimState.lastVisualSelection = {
+          mode: Mode.Visual,
+          start: position.getRight(),
+          end: position.getRight(),
+        };
+      }
+      if (
+        this.vimState.lastVisualSelection.mode === Mode.Visual &&
+        this.vimState.lastVisualSelection.start.isAfter(this.vimState.lastVisualSelection.end)
+      ) {
+        // HACK: Visual mode representation is stupid
+        this.vimState.lastVisualSelection.start = this.vimState.lastVisualSelection.end.getLeft();
+        this.vimState.lastVisualSelection.end = this.vimState.lastVisualSelection.start;
+      }
+    } else {
+      const isUppercaseMark = markName.toUpperCase() === markName;
+      const newMark: IMark = {
+        position,
+        name: markName,
+        isUppercaseMark,
+        document: isUppercaseMark ? document : undefined,
+      };
+      this.putMarkInList(newMark);
     }
-
-    const isUppercaseMark = markName.toUpperCase() === markName;
-    const newMark: IMark = {
-      position,
-      name: markName,
-      isUppercaseMark,
-      document: isUppercaseMark ? document : undefined,
-    };
-    this.putMarkInList(newMark);
   }
 
   /**
