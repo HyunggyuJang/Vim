@@ -7,7 +7,7 @@ import { ExCommandLine } from './../cmd_line/commandLine';
 import { Cursor } from './../common/motion/cursor';
 import { PositionDiff, earlierOf, sorted } from './../common/motion/position';
 import { configuration } from './../configuration/configuration';
-import { Mode, isVisualMode } from './../mode/mode';
+import { DotCommandStatus, Mode, isVisualMode } from './../mode/mode';
 import { Register, RegisterMode } from './../register/register';
 import { VimState } from './../state/vimState';
 import { TextEditor } from './../textEditor';
@@ -127,6 +127,23 @@ export class DeleteOperator extends BaseOperator {
       end = new Position(end.line + 1, 0);
     }
 
+    const sLine = vimState.document.lineAt(start.line).text;
+    const eLine = vimState.document.lineAt(end.line).text;
+    if (
+      start.character !== 0 &&
+      isLowSurrogate(sLine.charCodeAt(start.character)) &&
+      isHighSurrogate(sLine.charCodeAt(start.character - 1))
+    ) {
+      start = start.getLeft();
+    }
+    if (
+      end.character !== 0 &&
+      isLowSurrogate(eLine.charCodeAt(end.character)) &&
+      isHighSurrogate(eLine.charCodeAt(end.character - 1))
+    ) {
+      end = end.getRight();
+    }
+
     // Yank the text
     let text = vimState.document.getText(new vscode.Range(start, end));
     if (vimState.currentRegisterMode === RegisterMode.LineWise) {
@@ -134,10 +151,12 @@ export class DeleteOperator extends BaseOperator {
       text = text.endsWith('\r\n')
         ? text.slice(0, -2)
         : text.endsWith('\n')
-          ? text.slice(0, -1)
-          : text;
+        ? text.slice(0, -1)
+        : text;
     }
     Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     // When deleting the last line linewise, we need to delete the newline
     // character BEFORE the range because there isn't one after the range.
@@ -228,6 +247,8 @@ export class YankOperator extends BaseOperator {
     this.highlightYankedRanges(vimState, [range]);
 
     Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     vimState.cursorStopPosition =
       vimState.currentMode === Mode.Normal && vimState.currentRegisterMode === RegisterMode.LineWise
@@ -459,7 +480,10 @@ class IndentOperatorVisualAndVisualLine extends BaseOperator {
 
   public async run(vimState: VimState, start: Position, end: Position): Promise<void> {
     // Repeating this command with dot should apply the indent to the previous selection
-    if (vimState.isRunningDotCommand && vimState.dotCommandPreviousVisualSelection) {
+    if (
+      vimState.dotCommandStatus === DotCommandStatus.Executing &&
+      vimState.dotCommandPreviousVisualSelection
+    ) {
       if (vimState.cursorStartPosition.isAfter(vimState.cursorStopPosition)) {
         const shiftSelectionByNum =
           vimState.dotCommandPreviousVisualSelection.end.line -
@@ -492,7 +516,10 @@ class IndentOperatorVisualBlock extends BaseOperator {
      * block formed by extending the cursor start position downward by the number of lines
      * in the previous visual block selection.
      */
-    if (vimState.isRunningDotCommand && vimState.dotCommandPreviousVisualSelection) {
+    if (
+      vimState.dotCommandStatus === DotCommandStatus.Executing &&
+      vimState.dotCommandPreviousVisualSelection
+    ) {
       const shiftSelectionByNum = Math.abs(
         vimState.dotCommandPreviousVisualSelection.end.line -
           vimState.dotCommandPreviousVisualSelection.start.line,
@@ -549,7 +576,10 @@ class OutdentOperatorVisualAndVisualLine extends BaseOperator {
 
   public async run(vimState: VimState, start: Position, end: Position): Promise<void> {
     // Repeating this command with dot should apply the indent to the previous selection
-    if (vimState.isRunningDotCommand && vimState.dotCommandPreviousVisualSelection) {
+    if (
+      vimState.dotCommandStatus === DotCommandStatus.Executing &&
+      vimState.dotCommandPreviousVisualSelection
+    ) {
       if (vimState.cursorStartPosition.isAfter(vimState.cursorStopPosition)) {
         const shiftSelectionByNum =
           vimState.dotCommandPreviousVisualSelection.end.line -
@@ -585,7 +615,10 @@ class OutdentOperatorVisualBlock extends BaseOperator {
      * block formed by extending the cursor start position downward by the number of lines
      * in the previous visual block selection.
      */
-    if (vimState.isRunningDotCommand && vimState.dotCommandPreviousVisualSelection) {
+    if (
+      vimState.dotCommandStatus === DotCommandStatus.Executing &&
+      vimState.dotCommandPreviousVisualSelection
+    ) {
       const shiftSelectionByNum = Math.abs(
         vimState.dotCommandPreviousVisualSelection.end.line -
           vimState.dotCommandPreviousVisualSelection.start.line,
@@ -644,8 +677,11 @@ export class ChangeOperator extends BaseOperator {
     }
 
     const deleteRange = new vscode.Range(start, end);
+    const text = vimState.document.getText(deleteRange);
 
-    Register.put(vimState, vimState.document.getText(deleteRange), this.multicursorIndex, true);
+    Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     if (vimState.currentRegisterMode === RegisterMode.LineWise && configuration.autoindent) {
       // Linewise is a bit of a special case - we want to preserve the first line's indentation,
@@ -700,7 +736,10 @@ class YankVisualBlockMode extends BaseOperator {
 
     this.highlightYankedRanges(vimState, ranges);
 
-    Register.put(vimState, lines.join('\n'), this.multicursorIndex, true);
+    const text = lines.join('\n');
+    Register.put(vimState, text, this.multicursorIndex, true);
+    // Put into kill ring
+    vimState.historyTracker.yankToKillRing(text);
 
     vimState.historyTracker.addMark(vimState.document, startPos, '<');
     vimState.historyTracker.addMark(vimState.document, endPos, '>');

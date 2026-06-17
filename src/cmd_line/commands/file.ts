@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { Logger } from '../../util/logger';
 import { getPathDetails, resolveUri } from '../../util/path';
 import { doesFileExist } from 'platform/fs';
+// TODO:
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import untildify = require('untildify');
 import { VimState } from '../../state/vimState';
 import { ExCommand } from '../../vimscript/exCommand';
@@ -237,8 +239,8 @@ export class FileCommand extends ExCommand {
       args.cmd?.type === 'line_number'
         ? args.cmd.line
         : args.cmd?.type === 'last_line'
-          ? vscode.window.activeTextEditor!.document.lineCount - 1
-          : undefined;
+        ? vscode.window.activeTextEditor!.document.lineCount - 1
+        : undefined;
     if (lineNumber !== undefined && lineNumber >= 0) {
       const pos = new vscode.Position(lineNumber, 0);
       editor.selection = new vscode.Selection(pos, pos);

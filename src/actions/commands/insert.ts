@@ -5,6 +5,7 @@ import { lineCompletionProvider } from '../../completion/lineCompletionProvider'
 import { ErrorCode, VimError } from '../../error';
 import { RecordedState } from '../../state/recordedState';
 import { VimState } from '../../state/vimState';
+import { globalState } from '../../state/globalState';
 import { StatusBar } from '../../statusBar';
 import { isHighSurrogate, isLowSurrogate } from '../../util/util';
 import { PositionDiff } from './../../common/motion/position';
@@ -148,6 +149,7 @@ export class CommandInsertPreviousText extends BaseCommand {
 
     vimState.recordedState.transformer.addTransformation({
       type: 'replayRecordedState',
+      count: 1,
       recordedState,
     });
   }
@@ -501,6 +503,22 @@ class CommandCtrlVInInsertMode extends BaseCommand {
   public override async exec(position: Position, vimState: VimState): Promise<void> {
     const clipboard = await Register.get('*', this.multicursorIndex);
     const text = clipboard?.text instanceof RecordedState ? undefined : clipboard?.text;
+
+    if (text) {
+      vimState.recordedState.transformer.insert(vimState.cursorStopPosition, text);
+    }
+  }
+}
+
+@RegisterAction
+class AltYInInsertMode extends BaseCommand {
+  modes = [Mode.Insert];
+  keys = ['<A-y>'];
+
+  public override async exec(position: Position, vimState: VimState): Promise<void> {
+    const text = await vscode.window.showQuickPick([...new Set(globalState.killRing.reverse())], {
+      placeHolder: 'Choose which kill to yank',
+    });
 
     if (text) {
       vimState.recordedState.transformer.insert(vimState.cursorStopPosition, text);

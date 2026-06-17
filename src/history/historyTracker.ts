@@ -9,7 +9,7 @@
  *
  * Undo/Redo will advance forward or backwards through Steps.
  */
-import DiffMatchPatch = require('diff-match-patch');
+import * as DiffMatchPatch from 'diff-match-patch';
 import * as vscode from 'vscode';
 
 import { VimState } from './../state/vimState';
@@ -22,6 +22,7 @@ import { Mode } from '../mode/mode';
 import { ErrorCode, VimError } from '../error';
 import { Logger } from '../util/logger';
 import { earlierOf } from '../common/motion/position';
+import { configuration } from '../configuration/configuration';
 
 const diffEngine = new DiffMatchPatch.diff_match_patch();
 diffEngine.Diff_Timeout = 1; // 1 second
@@ -520,6 +521,16 @@ export class HistoryTracker {
   private getAllMarksInDocument(document: vscode.TextDocument): IMark[] {
     const globalMarks = HistoryStep.globalMarks.filter((mark) => mark.document === document);
     return [...this.getLocalMarks(), ...globalMarks];
+  }
+
+  /**
+   * Yanks to kill ring
+   */
+  public yankToKillRing(text: string): void {
+    const size = globalState.killRing.push(text);
+    if (size > configuration.killRingMax) {
+      globalState.killRing.shift();
+    }
   }
 
   /**

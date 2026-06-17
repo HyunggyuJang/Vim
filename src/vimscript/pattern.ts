@@ -179,7 +179,7 @@ export class Pattern {
   }
 
   private static compileRegex(regexString: string, ignoreCase?: boolean): RegExp {
-    const flags = ignoreCase ?? configuration.ignorecase ? 'gim' : 'gm';
+    const flags = (ignoreCase ?? configuration.ignorecase) ? 'gim' : 'gm';
     try {
       return new RegExp(regexString, flags);
     } catch (err) {
@@ -196,8 +196,8 @@ export class Pattern {
     const delimiter = args.delimiter
       ? args.delimiter
       : args.direction === SearchDirection.Forward
-        ? '/'
-        : '?';
+      ? '/'
+      : '?';
     // TODO: Some escaped characters need special treatment
     return seqMap(
       string('|').result(true).fallback(false), // Leading | matches everything

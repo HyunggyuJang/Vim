@@ -689,11 +689,20 @@ class MoveLeft extends BaseMovement {
   public override async execAction(position: Position, vimState: VimState): Promise<Position> {
     const getLeftWhile = (p: Position): Position => {
       const line = vimState.document.lineAt(p.line).text;
-      const newPosition = p.getLeft();
-      if (newPosition.character === 0) {
-        return newPosition;
+
+      if (p.character === 0) {
+        return p;
       }
       if (
+        isLowSurrogate(line.charCodeAt(p.character)) &&
+        isHighSurrogate(line.charCodeAt(p.character - 1))
+      ) {
+        p = p.getLeft();
+      }
+
+      const newPosition = p.getLeft();
+      if (
+        newPosition.character > 0 &&
         isLowSurrogate(line.charCodeAt(newPosition.character)) &&
         isHighSurrogate(line.charCodeAt(newPosition.character - 1))
       ) {
@@ -1275,21 +1284,69 @@ class MoveScreenToLeftHalf extends MoveByScreenLine {
 }
 
 @RegisterAction
-class MoveToLineFromViewPortTop extends MoveByScreenLine {
+class MoveToLineFromViewPortTop extends BaseMovement {
   keys = ['H'];
-  movementType: CursorMovePosition = 'viewPortTop';
-  override by: CursorMoveByUnit = 'line';
-  override value = 1;
   override isJump = true;
+
+  public override async execActionWithCount(
+    position: Position,
+    vimState: VimState,
+    count: number,
+  ): Promise<Position | IMovement> {
+    vimState.currentRegisterMode = RegisterMode.LineWise;
+
+    const topLine = vimState.editor.visibleRanges[0].start.line ?? 0;
+    if (topLine === 0) {
+      return {
+        start: vimState.cursorStartPosition,
+        stop: position.with({ line: topLine }).obeyStartOfLine(vimState.document),
+      };
+    }
+
+    const scrolloff = configuration
+      .getConfiguration('editor')
+      .get<number>('cursorSurroundingLines', 0);
+    const line = topLine + scrolloff;
+
+    return {
+      start: vimState.cursorStartPosition,
+      stop: position.with({ line }).obeyStartOfLine(vimState.document),
+    };
+  }
 }
 
 @RegisterAction
-class MoveToLineFromViewPortBottom extends MoveByScreenLine {
+class MoveToLineFromViewPortBottom extends BaseMovement {
   keys = ['L'];
-  movementType: CursorMovePosition = 'viewPortBottom';
-  override by: CursorMoveByUnit = 'line';
-  override value = 1;
   override isJump = true;
+
+  public override async execActionWithCount(
+    position: Position,
+    vimState: VimState,
+    count: number,
+  ): Promise<Position | IMovement> {
+    vimState.currentRegisterMode = RegisterMode.LineWise;
+
+    const bottomLine = vimState.editor.visibleRanges[0].end.line ?? 0;
+    const numLines = vimState.editor.document.lineCount;
+    if (bottomLine === numLines - 1) {
+      // NOTE: editor will scroll to accommodate editor.cursorSurroundingLines in this scenario
+      return {
+        start: vimState.cursorStartPosition,
+        stop: position.with({ line: bottomLine }).obeyStartOfLine(vimState.document),
+      };
+    }
+
+    const scrolloff = configuration
+      .getConfiguration('editor')
+      .get<number>('cursorSurroundingLines', 0);
+    const line = bottomLine - scrolloff;
+
+    return {
+      start: vimState.cursorStartPosition,
+      stop: position.with({ line }).obeyStartOfLine(vimState.document),
+    };
+  }
 }
 
 @RegisterAction
